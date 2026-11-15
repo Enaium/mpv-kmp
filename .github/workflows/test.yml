@@ -212,6 +212,16 @@ jobs:
       - name: Run JVM tests
         run: ./gradlew --no-daemon --stacktrace :mpv-kmp:jvmTest
 
+      - name: Upload Windows test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-reports
+          path: |
+            mpv-kmp/build/reports/tests/**
+            mpv-kmp/build/test-results/**
+          if-no-files-found: ignore
+
   test-android:
     name: Test Android
     runs-on: ubuntu-latest
