@@ -1,0 +1,15 @@
+package = mpv
+headers = mpv/client.h mpv/render.h mpv/render_gl.h mpv/stream_cb.h
+
+# libmpv is a dynamic dependency. The headers are always the pinned ones from
+# the mpv submodule; the shared library is resolved when the application is
+# linked, so klibs can be built on any host even without libmpv installed.
+#
+# The client API is stable across mpv versions (MPV_CLIENT_API_VERSION 2.6 in
+# 0.42.0), so a system libmpv 2.x can be used at runtime.
+linkerOpts.osx = -lmpv
+linkerOpts.ios = -lmpv
+linkerOpts.tvos = -lmpv
+linkerOpts.linux = -lmpv -lm -ldl -lpthread
+linkerOpts.mingw = -lmpv
+linkerOpts.android = -lmpv -landroid -llog -ldl -lm

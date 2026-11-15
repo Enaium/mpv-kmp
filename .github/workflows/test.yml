@@ -1,0 +1,266 @@
+name: Test
+
+"on":
+  workflow_dispatch:
+
+# Builds and tests each platform on the runner that can build it, after
+# publishing the artifacts to the local Maven repository:
+#
+#   macOS ARM64 -> metadata + jvm + Apple klibs + darwin JNI, JVM/native tests,
+#                  and the SDL/ImGui player example (headless)
+#   Linux x64   -> linuxX64/linuxArm64/mingwX64 klibs + linux JNI, JVM/native
+#                  tests, and the player example (headless)
+#   Windows x64 -> windows-x86_64 JNI artifact and JVM tests
+#   Android x64 -> four androidNative klibs + the Android AAR
+#   Web x64     -> wasmJs klib, the browser player, and the library npm package staging
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-macos:
+    name: Test macOS ARM64
+    runs-on: macos-14
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Configure JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install libmpv
+        run: brew install mpv
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode signing key
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | tr -d ' \n' | base64 -d > "$RUNNER_TEMP/signing-key.gpg"
+          ls -la "$RUNNER_TEMP/signing-key.gpg"
+
+      - name: Publish macOS artifacts to Maven Local
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          -Psigning.keyId="${{ secrets.SIGNING_KEY_ID }}"
+          -Psigning.secretKeyRingFile="${{ runner.temp }}/signing-key.gpg"
+          -Psigning.password="${{ secrets.SIGNING_PASSWORD }}"
+          :mpv-kmp:publishKotlinMultiplatformPublicationToMavenLocal
+          :mpv-kmp:publishJvmPublicationToMavenLocal
+          :mpv-kmp:publishMacosArm64PublicationToMavenLocal
+          :mpv-kmp:publishMacosX64PublicationToMavenLocal
+          :mpv-kmp:publishWasmJsPublicationToMavenLocal
+          :jni-jvm-darwin-aarch64:publishToMavenLocal
+          :jni-jvm-darwin-x86_64:publishToMavenLocal
+
+      - name: Run JVM tests
+        run: ./gradlew --no-daemon --stacktrace :mpv-kmp:jvmTest
+
+      - name: Run native tests (macosArm64)
+        run: ./gradlew --no-daemon --stacktrace :mpv-kmp:macosArm64Test
+
+      - name: Run the player example (JVM, headless)
+        run: >
+          SDL_VIDEO_DRIVER=dummy ./gradlew --no-daemon --stacktrace
+          :examples:player:jvmRun --args="--no-audio --frames 300"
+
+      - name: Build and run the player example (macosArm64, headless)
+        run: |
+          ./gradlew --no-daemon --stacktrace :examples:player:linkDebugExecutableMacosArm64
+          SDL_VIDEO_DRIVER=dummy MPV_KMP_FRAMES=120 MPV_KMP_NO_AUDIO=1 \
+            MPV_KMP_FILE="$GITHUB_WORKSPACE/examples/player/src/commonMain/resources/sample.webm" \
+            ./examples/player/build/bin/macosArm64/debugExecutable/player.kexe
+
+  test-linux:
+    name: Test Linux x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Configure JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install libmpv and X11/SDL build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libmpv-dev \
+            libx11-dev libxext-dev libxcursor-dev libxi-dev libxfixes-dev \
+            libxrandr-dev libxrender-dev libxss-dev libxtst-dev \
+            libwayland-dev libwayland-bin libxkbcommon-dev libegl-dev libdecor-0-dev \
+            libpipewire-0.3-dev libpulse-dev libasound2-dev \
+            gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode signing key
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | tr -d ' \n' | base64 -d > "$RUNNER_TEMP/signing-key.gpg"
+          ls -la "$RUNNER_TEMP/signing-key.gpg"
+
+      - name: Publish Linux artifacts to Maven Local
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          -Psigning.keyId="${{ secrets.SIGNING_KEY_ID }}"
+          -Psigning.secretKeyRingFile="${{ runner.temp }}/signing-key.gpg"
+          -Psigning.password="${{ secrets.SIGNING_PASSWORD }}"
+          :mpv-kmp:publishKotlinMultiplatformPublicationToMavenLocal
+          :mpv-kmp:publishLinuxX64PublicationToMavenLocal
+          :mpv-kmp:publishLinuxArm64PublicationToMavenLocal
+          :mpv-kmp:publishMingwX64PublicationToMavenLocal
+          :jni-jvm-linux-x86_64:publishToMavenLocal
+          :jni-jvm-linux-aarch64:publishToMavenLocal
+
+      - name: Run JVM tests
+        run: ./gradlew --no-daemon --stacktrace :mpv-kmp:jvmTest
+
+      - name: Run native tests (linuxX64)
+        run: ./gradlew --no-daemon --stacktrace :mpv-kmp:linuxX64Test
+
+      - name: Run the player example (JVM, headless)
+        run: >
+          SDL_VIDEO_DRIVER=dummy ./gradlew --no-daemon --stacktrace
+          :examples:player:jvmRun --args="--no-audio --frames 300"
+
+      - name: Build and run the player example (linuxX64, headless)
+        run: |
+          ./gradlew --no-daemon --stacktrace :examples:player:linkDebugExecutableLinuxX64
+          SDL_VIDEO_DRIVER=dummy MPV_KMP_FRAMES=120 MPV_KMP_NO_AUDIO=1 \
+            MPV_KMP_FILE="$GITHUB_WORKSPACE/examples/player/src/commonMain/resources/sample.webm" \
+            ./examples/player/build/bin/linuxX64/debugExecutable/player.kexe
+
+  test-windows:
+    name: Test Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Configure JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install libmpv
+        shell: pwsh
+        run: choco install mpv -y --no-progress
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode signing key
+        shell: pwsh
+        run: |
+          [IO.File]::WriteAllBytes(
+            "$env:RUNNER_TEMP\signing-key.gpg",
+            [Convert]::FromBase64String("${{ secrets.SIGNING_KEY }}")
+          )
+          Get-Item "$env:RUNNER_TEMP\signing-key.gpg" | Select-Object Length
+
+      - name: Publish the Windows JNI artifact to Maven Local
+        shell: cmd
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          -Psigning.keyId="${{ secrets.SIGNING_KEY_ID }}"
+          -Psigning.secretKeyRingFile="${{ runner.temp }}\signing-key.gpg"
+          -Psigning.password="${{ secrets.SIGNING_PASSWORD }}"
+          :jni-jvm-windows-x86_64:publishToMavenLocal
+
+      - name: Run JVM tests
+        run: ./gradlew --no-daemon --stacktrace :mpv-kmp:jvmTest
+
+  test-android:
+    name: Test Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Configure JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Android NDK and platform
+        run: |
+          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
+          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+            --install "ndk;27.0.12077973" "platforms;android-36" "platforms;android-37" "cmake;3.22.1" >/dev/null
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Compile the four Android native targets
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          :mpv-kmp:compileKotlinAndroidNativeArm64
+          :mpv-kmp:compileKotlinAndroidNativeArm32
+          :mpv-kmp:compileKotlinAndroidNativeX64
+          :mpv-kmp:compileKotlinAndroidNativeX86
+          :examples:player:compileKotlinAndroidNativeArm64
+          :examples:player:compileKotlinAndroidNativeArm32
+          :examples:player:compileKotlinAndroidNativeX64
+          :examples:player:compileKotlinAndroidNativeX86
+
+      - name: Build the Android AAR and JVM player APK
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          :android-jvm:assembleRelease
+          :examples:player:android:assembleDebug
+
+  test-web:
+    name: Test Web (wasmJs)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Configure JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build the wasmJs library and player
+        run: >
+          ./gradlew --no-daemon --stacktrace
+          :mpv-kmp:compileKotlinWasmJs
+          :examples:player:copyWebAssets
+          :examples:player:wasmJsBrowserDistribution
+
+      - name: Stage and validate the npm package
+        run: |
+          ./gradlew --no-daemon --stacktrace :mpv-kmp:assembleWasmNpm
+          cd mpv-kmp/build/npm
+          npm pack --dry-run
+          npm publish --dry-run --access public --tag latest
