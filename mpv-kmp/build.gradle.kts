@@ -158,6 +158,20 @@ kotlin {
             }
         }
     }
+    if (hostOsName.contains("linux")) {
+        val arch = System.getProperty("os.arch").orEmpty().lowercase()
+        val libraryDir = when {
+            arch.contains("aarch64") -> "/usr/lib/aarch64-linux-gnu"
+            else -> "/usr/lib/x86_64-linux-gnu"
+        }
+        targets.withType<KotlinNativeTarget>().configureEach {
+            if (name.startsWith("linux")) {
+                binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable>().configureEach {
+                    linkerOpts("-L$libraryDir")
+                }
+            }
+        }
+    }
 }
 
 // ==================== Publishing ====================

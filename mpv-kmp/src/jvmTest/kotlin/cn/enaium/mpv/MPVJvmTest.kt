@@ -38,13 +38,19 @@ import kotlin.test.assertTrue
 class MPVJvmTest {
 
     private fun headlessPlayer(configure: MPVOptions.() -> Unit = {}): MPVClient =
-        MPV.create {
-            setOption("config", "no")
-            setOption("terminal", "no")
-            setOption("idle", "yes")
-            setOption("vo", "null")
-            setOption("ao", "null")
-            configure()
+        try {
+            MPV.create {
+                setOption("config", "no")
+                setOption("terminal", "no")
+                setOption("idle", "yes")
+                setOption("vo", "null")
+                setOption("ao", "null")
+                configure()
+            }
+        } catch (t: Throwable) {
+            System.err.println("headlessPlayer failed: ${t.message}")
+            t.printStackTrace()
+            throw t
         }
 
     @Test
