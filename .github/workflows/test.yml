@@ -3,6 +3,9 @@ name: Test
 "on":
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Builds and tests each platform on the runner that can build it, after
 # publishing the artifacts to the local Maven repository:
 #
