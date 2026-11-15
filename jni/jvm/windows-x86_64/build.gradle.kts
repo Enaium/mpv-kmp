@@ -103,7 +103,18 @@ val configureJniLibrary by tasks.registering(Exec::class) {
             "-DJNI_INCLUDE_DIR_PLATFORM=$javaHome/include/$jniPlatform",
             "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=${outDir.absolutePath}",
         ) + archFlags +
-            if (jniOs == "darwin") listOf("-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0") else emptyList(),
+            if (jniOs == "darwin") {
+                listOf("-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0")
+            } else if (jniOs == "windows") {
+                // Visual Studio is a multi-config generator; DLLs land in
+                // Release/ unless the RUNTIME output directory is set.
+                listOf(
+                    "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=${outDir.absolutePath}",
+                    "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=${outDir.absolutePath}",
+                )
+            } else {
+                emptyList()
+            },
     )
 }
 
