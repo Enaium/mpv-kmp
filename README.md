@@ -321,7 +321,8 @@ Each JNI module builds only on its matching host; build every artifact on its
 runner before publishing. `.github/workflows/test.yml` publishes the artifacts
 to Maven Local, runs the JVM/native tests and the desktop player headless.
 `.github/workflows/publish.yml` publishes Maven Central coordinates from their
-matching runners and `@enaium/mpv-kmp` to npm.
+matching runners. The npm package is published locally with
+`:mpv-kmp:publishWasmNpm`.
 
 The wasmJs target also builds a standalone Kotlin/Wasm executable with
 `@JsExport` functions (`createPlayer`, `initialize`, `command`,
