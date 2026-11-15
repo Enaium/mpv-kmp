@@ -24,7 +24,7 @@ concurrency:
 jobs:
   test-macos:
     name: Test macOS ARM64
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -208,7 +208,7 @@ jobs:
         run: |
           yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null
           ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
-            --install "ndk;27.0.12077973" "platforms;android-36" "platforms;android-37" "cmake;3.22.1" >/dev/null
+            --install "ndk;27.0.12077973" "platforms;android-36" "platforms;android-37.1" "cmake;3.22.1" >/dev/null
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -247,7 +247,7 @@ jobs:
           java-version: 21
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22"
 
