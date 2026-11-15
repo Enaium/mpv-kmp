@@ -31,6 +31,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mpv.*
+import platform.posix.LC_NUMERIC
+import platform.posix.setlocale
 
 @OptIn(ExperimentalForeignApi::class)
 private class NativeMPVClient(
@@ -574,6 +576,9 @@ private class NativeMPVRenderContext(
 }
 
 internal actual fun createMPVClient(): MPVClient {
+    // libmpv refuses to create a client when LC_NUMERIC is not C (for example
+    // on GitHub's macOS runners). Set it before the first mpv_create call.
+    setlocale(LC_NUMERIC, "C")
     val handle = mpv_create() ?: throw MPVException(MPVError.NOMEM, "mpv_create() returned null")
     return NativeMPVClient(handle)
 }

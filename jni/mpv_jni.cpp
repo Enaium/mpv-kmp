@@ -34,6 +34,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <clocale>
 #include <cstring>
 #include <deque>
 #include <mutex>
@@ -667,6 +668,10 @@ void throwUnsatisfiedLink(JNIEnv *env, const std::string &message) {
 }
 
 bool ensureApiLoaded(JNIEnv *env) {
+    // libmpv refuses to create a client when LC_NUMERIC is not C (for example
+    // on GitHub's macOS runners). Set it before the first mpv_create call.
+    static std::once_flag localeOnce;
+    std::call_once(localeOnce, [] { std::setlocale(LC_NUMERIC, "C"); });
     std::lock_guard<std::mutex> lock(g_apiMutex);
     if (g_api.library) return true;
     if (!g_loadError.empty()) {
