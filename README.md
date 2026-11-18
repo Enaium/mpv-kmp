@@ -2,7 +2,7 @@
 
 Kotlin Multiplatform bindings for [libmpv](https://github.com/mpv-player/mpv), pinned to **mpv 0.42.0** (`b0841e8c4d156b8403dc1876c4cbd9011eb583f3`).
 
-Library version: **`0.42.0.1`**.
+Library version: **`1.0.0-fixed.0.42.0`** (`<kmp-version>-fixed.<libmpv-version>`).
 
 The client API (`mpv/client.h`, API version 2.6) is exposed through one common
 Kotlin API on JVM, Android, macOS, Linux, Windows, the four Android NDKs and
@@ -308,7 +308,7 @@ events). Both need a host libmpv (`brew install mpv` on macOS).
 
 | Artifact | Contents |
 |---|---|
-| `cn.enaium.mpv:mpv-kmp:0.42.0.1` | common API, native klibs, JVM/wasm variants |
+| `cn.enaium.mpv:mpv-kmp:1.0.0-fixed.0.42.0` | common API, native klibs, JVM/wasm variants |
 | `cn.enaium.mpv:mpv-kmp-jni-jvm-linux-x86_64` | `libmpv_jni.so` |
 | `cn.enaium.mpv:mpv-kmp-jni-jvm-linux-aarch64` | `libmpv_jni.so` |
 | `cn.enaium.mpv:mpv-kmp-jni-jvm-darwin-x86_64` | `libmpv_jni.dylib` |
@@ -329,8 +329,8 @@ The wasmJs target also builds a standalone Kotlin/Wasm executable with
 `getString`/`getNumber`/`getFlag`, and property setters). `:mpv-kmp:assembleWasmNpm`
 stages the compiled `.mjs`, `.wasm`, TypeScript declarations, LICENSE, and a
 generated npm README in `mpv-kmp/build/npm`; `:mpv-kmp:publishWasmNpm` uploads
-it. Examples are not published to npm. The npm version is derived from the
-project version (`0.42.0.1` becomes `0.42.0-1`). Provide the token with
+it. Examples are not published to npm. The npm version is the project version
+verbatim (`1.0.0-fixed.0.42.0`). Provide the token with
 `-Pnpm.publish.key=<token>`, `npm.publish.key` in
 `~/.gradle/gradle.properties`, or `NODE_AUTH_TOKEN`. Use
 `-Pnpm.provenance=true` from CI and `-Pnpm.publish.dryRun=true` to validate the

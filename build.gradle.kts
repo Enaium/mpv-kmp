@@ -13,9 +13,8 @@ plugins {
 // ==================== Project coordinates ====================
 allprojects {
     group = "cn.enaium.mpv"
-    // Tracks the pinned libmpv release (0.42.0); the trailing component is
-    // this library's own revision.
-    version = "0.42.0.1"
+    // <kmp version>-fixed.<pinned upstream library version>
+    version = "1.0.0-fixed.0.42.0"
 }
 
 // ==================== Android example runtime ====================

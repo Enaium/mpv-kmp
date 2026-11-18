@@ -228,19 +228,10 @@ mavenPublishing {
 // @JsExport functions (MPV.web.kt). Publish that module as @enaium/mpv-kmp so
 // browser apps can use the MPVWeb backend from JavaScript/TypeScript without
 // adding the example player to the package.
-val npmPackageVersion: String = run {
-    val projectVersion = project.version.toString()
-    val semver = if (Regex("^\\d+\\.\\d+\\.\\d+\\.\\d+$").matches(projectVersion)) {
-        // npm only accepts three core version components; 0.42.0.1 becomes
-        // the prerelease 0.42.0-1 (explicitly tagged latest below).
-        projectVersion.substringBeforeLast('.') + "-" + projectVersion.substringAfterLast('.')
-    } else {
-        projectVersion
-    }
+val npmPackageVersion: String = project.version.toString().also { semver ->
     require(Regex("^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$").matches(semver)) {
-        "Project version '$projectVersion' is not valid npm semver"
+        "Project version '$semver' is not valid npm semver"
     }
-    semver
 }
 val wasmExecutableDir = layout.buildDirectory.dir(
     "compileSync/wasmJs/main/productionExecutable/kotlin",
