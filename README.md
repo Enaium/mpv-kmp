@@ -289,8 +289,8 @@ python3 -m http.server -d examples/player/build/browserApp 8080
 ./gradlew :mpv-kmp:assembleWasmNpm
 ```
 
-The desktop player uses `cn.enaium.imgui:imgui-kmp:1.93.0.2` and
-`cn.enaium.sdl:sdl-kmp:3.4.18.2` for its SDL/ImGui surface. It provides a media
+The desktop player uses `cn.enaium.imgui:imgui-kmp:1.0.17-fixed.1.93.0` and
+`cn.enaium.sdl:sdl-kmp:1.0.14-fixed.3.4.18` for its SDL/ImGui surface. It provides a media
 path/URL input, load, play/pause, stop, mute, volume, a seek bar with position
 and duration, fullscreen, and keyboard shortcuts (space, arrows). The same
 player class runs on JVM, Kotlin/Native desktop, Android JVM and Android native
